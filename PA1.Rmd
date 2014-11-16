@@ -1,0 +1,80 @@
+---
+title: "Reproducible Research: Peer Assessment 1"
+output: 
+  html_document:
+    keep_md: true
+---
+
+
+## Loading and preprocessing the data
+
+library(data.table)
+
+activity1 <- data.table(read.csv('../../data/activity.csv', header=TRUE))
+setkey(activity1, interval)
+
+numDays <- length(unique(activity1$date))
+
+
+## What is mean total number of steps taken per day?
+
+stepsPerDay1 <- aggregate(. ~ date, data=activity1, FUN=sum)[,1:2]
+hist(stepsPerDay1$steps, breaks=numDays, main="Steps Per Day", xlab="Steps", col="blue")
+
+meanStepsPerDay1 <- mean(stepsPerDay1$steps)
+medianStepsPerDay1 <- median(stepsPerDay1$steps)
+
+
+## What is the average daily activity pattern?
+
+avgStepsPerInterval <- data.table(aggregate(. ~ interval, data=activity1, FUN=mean)[,1:2])
+setkey(avgStepsPerInterval, interval)
+
+xyplot(steps ~ interval, data=avgStepsPerInterval, type='l', xlab="Interval", ylab="Steps", main="Average Steps Per Interval")
+
+
+
+library(ggplot2)
+ggplot(avgStepsPerInterval, aes(x=interval, y=steps)) + 
+  geom_bar(stat="identity") +
+  scale_x_continuous(breaks=round(seq(0, max(avgStepsPerInterval$interval), by = 250))) +
+  scale_y_continuous(breaks=round(seq(0, max(avgStepsPerInterval$steps), by = 25)))
+
+
+
+## Inputing missing values
+
+numMissingSteps1 <- length(which(is.na(activity1$steps)))
+
+activity2 <- data.table(read.csv('../../data/activity.csv', header=TRUE))
+setkey(activity2, interval)
+activity2[avgStepsPerInterval, steps := ifelse(is.na(steps), i.steps, steps), nomatch=0]
+
+numMissingSteps2 <- length(which(is.na(activity2$steps)))
+
+stepsPerDay2 <- aggregate(. ~ date, data=activity2, FUN=sum)[,1:2]
+hist(stepsPerDay2$steps, breaks=numDays, col="blue")
+
+meanStepsPerDay2 <- mean(stepsPerDay2$steps)
+medianStepsPerDay2 <- median(stepsPerDay2$steps)
+
+pctDiffMeanStepsPerDay <- abs((meanStepsPerDay2 - meanStepsPerDay1) / meanStepsPerDay2) * 100
+pctDiffMedStepsPerDay <- abs((medianStepsPerDay2 - medianStepsPerDay1) / medianStepsPerDay2) * 100
+
+hist(stepsPerDay2$steps, breaks=numDays, main="Steps Per Day", xlab="Steps", col="blue")
+
+
+
+## Are there differences in activity patterns between weekdays and weekends?
+
+activity2$day.type <- "weekday"
+activity2$date <- as.Date(activity2$date)
+activity2[,day.type := ifelse(weekdays(date) %in% c("Saturday","Sunday"), "weekend","weekday")]
+
+library(lattice)
+
+xyplot(steps ~ interval | day.type, data=activity2, layout=c(1,2), type='l')
+
+
+
+

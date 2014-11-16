@@ -33,15 +33,6 @@ setkey(avgStepsPerInterval, interval)
 xyplot(steps ~ interval, data=avgStepsPerInterval, type='l', xlab="Interval", ylab="Steps", main="Average Steps Per Interval")
 
 
-
-library(ggplot2)
-ggplot(avgStepsPerInterval, aes(x=interval, y=steps)) + 
-  geom_bar(stat="identity") +
-  scale_x_continuous(breaks=round(seq(0, max(avgStepsPerInterval$interval), by = 250))) +
-  scale_y_continuous(breaks=round(seq(0, max(avgStepsPerInterval$steps), by = 25)))
-
-
-
 ## Inputing missing values
 
 numMissingSteps1 <- length(which(is.na(activity1$steps)))
@@ -67,13 +58,16 @@ hist(stepsPerDay2$steps, breaks=numDays, main="Steps Per Day", xlab="Steps", col
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
-activity2$day.type <- "weekday"
 activity2$date <- as.Date(activity2$date)
 activity2[,day.type := ifelse(weekdays(date) %in% c("Saturday","Sunday"), "weekend","weekday")]
 
+library(plyr)
+avgStepsPerIntervalDayType <- ddply(activity2, c("day.type","interval"), summarise, avg.steps = mean(steps))
+
+
 library(lattice)
 
-xyplot(steps ~ interval | day.type, data=activity2, layout=c(1,2), type='l')
+xyplot(avg.steps ~ interval | day.type, data=avgStepsPerIntervalDayType, layout=c(1,2), type='l', xlab="Interval", ylab="Steps", main="Average Steps Per Interval")
 
 
 

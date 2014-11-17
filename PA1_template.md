@@ -108,3 +108,4 @@ xyplot(avg.steps ~ interval | day.type, data=avgStepsPerIntervalDayType, layout=
 
 
 
+

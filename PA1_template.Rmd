@@ -8,18 +8,103 @@ output:
 
 ## Loading and preprocessing the data
 
+Load the downloaded data and convert to a data.table.  Set the **interval** column as a key.
 
+```{r, echo=TRUE}
+library(data.table)
+
+activity1 <- data.table(read.csv('./data/activity.csv', header=TRUE))
+setkey(activity1, interval)
+numDays <- length(unique(activity1$date))
+```
+
+`r nrow(activity)` observations were found in the downloaded data.   
+`r numDays` unique dates are present.
+
+```{r}
+summary(activity1)
+```
+
+***
 
 ## What is mean total number of steps taken per day?
 
+Aggregate the activity data by date to sum the number of steps.
 
+```{r, echo=TRUE}
+stepsPerDay1 <- aggregate(. ~ date, data=activity1, FUN=sum)[,1:2]
+hist(stepsPerDay1$steps, breaks=numDays, main="Steps Per Day", xlab="Steps", col="blue")
+
+meanStepsPerDay1 <- mean(stepsPerDay1$steps)
+medianStepsPerDay1 <- median(stepsPerDay1$steps)
+```
+
+#### Mean number of steps per day : `r format(meanStepsPerDay1, big.mark=',')`
+#### Median number of steps per day : `r format(medianStepsPerDay1, big.mark=',')`
+
+***
 
 ## What is the average daily activity pattern?
 
+Aggregate the activity data by interval to find the mean value of the number of steps.
 
+```{r, echo=TRUE}
+avgStepsPerInterval <- data.table(aggregate(. ~ interval, data=activity1, FUN=mean)[,1:2])
+setkey(avgStepsPerInterval, interval)
 
-## Imputing missing values
+library(lattice)
+xyplot(steps ~ interval, data=avgStepsPerInterval, type='l', xlab="Interval", ylab="Steps", main="Average Steps Per Interval")
+```
 
+***
 
+## Inputing missing values
+
+```{r, echo=TRUE}
+numMissingSteps1 <- length(which(is.na(activity1$steps)))
+```
+
+`r numMissingSteps1` observation are missing values for number of steps. Create a duplicate dataset from the original data.  
+Set missing step values equal to the mean interval value.
+
+```{r, echo=TRUE ,warning=FALSE}
+activity2 <- data.table(read.csv('../../data/activity.csv', header=TRUE))
+setkey(activity2, interval)
+activity2[avgStepsPerInterval, steps := ifelse(is.na(steps), i.steps, steps), nomatch=0]
+
+numMissingSteps2 <- length(which(is.na(activity2$steps)))
+
+stepsPerDay2 <- aggregate(. ~ date, data=activity2, FUN=sum)[,1:2]
+hist(stepsPerDay2$steps, breaks=numDays, col="blue")
+
+meanStepsPerDay2 <- mean(stepsPerDay2$steps)
+medianStepsPerDay2 <- median(stepsPerDay2$steps)
+
+pctDiffMeanStepsPerDay <- abs((meanStepsPerDay2 - meanStepsPerDay1) / meanStepsPerDay2) * 100
+pctDiffMedStepsPerDay <- abs((medianStepsPerDay2 - medianStepsPerDay1) / medianStepsPerDay2) * 100
+
+hist(stepsPerDay2$steps, breaks=numDays, main="Steps Per Day", xlab="Steps", col="blue")
+```
+
+#### Mean number of steps per day : `r format(meanStepsPerDay2, big.mark=',')` (`r format(pctDiffMeanStepsPerDay, digits=4)` % difference)  
+#### Median number of steps per day : `r format(medianStepsPerDay2, big.mark=',')` (`r format(pctDiffMedStepsPerDay, digits=4)` % difference) 
+
+***
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+Create a new factor (day.type) in activity2 signifying whether the date is a weekday or weekend.  
+Calculated the mean number of steps per day.type and interval.
+
+```{r, echo=TRUE}
+activity2$date <- as.Date(activity2$date)
+activity2[,day.type := ifelse(weekdays(date) %in% c("Saturday","Sunday"), "weekend","weekday")]
+
+library(plyr)
+avgStepsPerIntervalDayType <- ddply(activity2, c("day.type","interval"), avgSteps = mean(steps))
+
+xyplot(avgSteps ~ interval | day.type, data=avgStepsPerIntervalDayType, layout=c(1,2), type='l', xlab="Interval", ylab="Steps", main="Average Steps Per Interval")
+```
+
+
+

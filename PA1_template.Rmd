@@ -18,7 +18,7 @@ setkey(activity1, interval)
 numDays <- length(unique(activity1$date))
 ```
 
-`r nrow(activity)` observations were found in the downloaded data.   
+`r nrow(activity1)` observations were found in the downloaded data.   
 `r numDays` unique dates are present.
 
 ```{r}
@@ -101,7 +101,7 @@ activity2$date <- as.Date(activity2$date)
 activity2[,day.type := ifelse(weekdays(date) %in% c("Saturday","Sunday"), "weekend","weekday")]
 
 library(plyr)
-avgStepsPerIntervalDayType <- ddply(activity2, c("day.type","interval"), avgSteps = mean(steps))
+avgStepsPerIntervalDayType <- ddply(activity2, c("day.type","interval"), summarise, avgSteps = mean(steps))
 
 xyplot(avgSteps ~ interval | day.type, data=avgStepsPerIntervalDayType, layout=c(1,2), type='l', xlab="Interval", ylab="Steps", main="Average Steps Per Interval")
 ```

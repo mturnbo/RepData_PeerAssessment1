@@ -8,7 +8,18 @@ Load the downloaded data and convert to a data.table.  Set the **interval** colu
 
 ```r
 library(data.table)
+```
 
+```
+## 
+## Attaching package: 'data.table'
+## 
+## The following object is masked _by_ '.GlobalEnv':
+## 
+##     .N
+```
+
+```r
 activity1 <- data.table(read.csv('./data/activity.csv', header=TRUE))
 setkey(activity1, interval)
 numDays <- length(unique(activity1$date))
@@ -160,7 +171,14 @@ activity2[,day.type := ifelse(weekdays(date) %in% c("Saturday","Sunday"), "weeke
 
 ```r
 library(plyr)
+avgStepsPerIntervalDayType <- ddply(activity2, c("day.type","interval"), summarise, avgSteps = mean(steps))
+
+xyplot(avgSteps ~ interval | day.type, data=avgStepsPerIntervalDayType, layout=c(1,2), type='l', xlab="Interval", ylab="Steps", main="Average Steps Per Interval")
 ```
+
+![](./PA1_template_files/figure-html/unnamed-chunk-7-1.png) 
+
+
 
 
 
